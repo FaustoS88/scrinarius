@@ -64,12 +64,19 @@ Each day of work is documented in the `days/` folder with its own README file.
     cp .env.example .env
     ```
 
-4.  **Run OpenSearch service:**
+4.  **Build the OpenSearch image and run it:**
     ```bash
+    docker build -t my-opensearch-ingest:latest .
     docker compose up -d
     ```
 
-5.  **Start development servers:**
+5.  **Create the backend's API key:**
+    The backend logs in with an API key that reads and writes only the `documents` index, valid 30 days. The script writes it into `.env` without printing it; rerun it to replace the key. API keys need OpenSearch 3.7+ and a security index created by this image: if a container from an older image exists, run `docker compose down` first.
+    ```bash
+    ./scripts/create-api-key.sh
+    ```
+
+6.  **Start development servers:**
     -   In the `backend` directory, with `.env` loaded:
         ```bash
         set -a; . ../.env; set +a

@@ -1,17 +1,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Client } from '@opensearch-project/opensearch';
 
-const password = process.env.OPENSEARCH_INITIAL_ADMIN_PASSWORD;
-if (!password) {
-  console.warn('OPENSEARCH_INITIAL_ADMIN_PASSWORD is not set: copy .env.example to .env and load it');
+const apiKey = process.env.OPENSEARCH_API_KEY;
+if (!apiKey) {
+  console.warn('OPENSEARCH_API_KEY is not set: run scripts/create-api-key.sh and load .env');
 }
 
 export const osClient = new Client({
   node: 'https://localhost:9200',
-  auth: {
-    username: 'admin',
-    password: password ?? '',
-  },
+  headers: { Authorization: `ApiKey ${apiKey ?? ''}` },
   ssl: { rejectUnauthorized: false },
 });
 
