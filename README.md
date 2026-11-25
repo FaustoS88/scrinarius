@@ -58,14 +58,21 @@ Each day of work is documented in the `days/` folder with its own README file.
     cd .. # Return to project root
     ```
 
-3.  **Run OpenSearch service:**
+3.  **Set the OpenSearch admin password:**
+    Copy `.env.example` to `.env` and fill in a strong password; `.env` is git-ignored.
+    ```bash
+    cp .env.example .env
+    ```
+
+4.  **Run OpenSearch service:**
     ```bash
     docker compose up -d
     ```
 
-4.  **Start development servers:**
-    -   In the `backend` directory:
+5.  **Start development servers:**
+    -   In the `backend` directory, with `.env` loaded:
         ```bash
+        set -a; . ../.env; set +a
         npm run start:dev
         ```
     -   In the `frontend` directory:

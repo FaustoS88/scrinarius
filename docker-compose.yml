@@ -4,6 +4,6 @@ services:
     image: my-opensearch-ingest:latest
     environment:
       - discovery.type=single-node
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=Str0ngP@ssw0rd!
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?set it in .env, see .env.example}
     ports:
       - "9200:9200"

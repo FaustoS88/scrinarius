@@ -1,11 +1,16 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Client } from '@opensearch-project/opensearch';
 
+const password = process.env.OPENSEARCH_INITIAL_ADMIN_PASSWORD;
+if (!password) {
+  console.warn('OPENSEARCH_INITIAL_ADMIN_PASSWORD is not set: copy .env.example to .env and load it');
+}
+
 export const osClient = new Client({
   node: 'https://localhost:9200',
   auth: {
     username: 'admin',
-    password: 'Str0ngP@ssw0rd!',
+    password: password ?? '',
   },
   ssl: { rejectUnauthorized: false },
 });
