@@ -14,7 +14,7 @@ You'll get both curl and React-UI methods for indexing base64-encoded PDFs, plus
 ## Prerequisites
 - Docker & Docker Compose configured with an OpenSearch service in docker-compose.yml
 - OpenSearch endpoint: `https://localhost:9200` (self-signed certs allowed)
-- Credentials: `admin:Str0ngP@ssw0rd!` for basic auth
+- Credentials: user `admin` and the password in `.env` (load it with `set -a; . ./.env; set +a` before the curl commands)
 - Node.js/NestJS backend and React (Vite) frontend set up
 - cURL or another HTTP client installed
 
@@ -27,7 +27,7 @@ Define mappings so that:
 - `published` is a date field
 
 ```bash
-curl -k -u admin:Str0ngP@ssw0rd! \
+curl -k -u "admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD" \
   -X PUT https://localhost:9200/documents \
   -H 'Content-Type: application/json' \
   -d '{
@@ -96,7 +96,7 @@ services:
     image: my-opensearch-ingest:latest
     environment:
       - discovery.type=single-node
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=Str0ngP@ssw0rd!
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD} # set in .env, see .env.example
     ports:
       - "9200:9200"
 ```
@@ -107,7 +107,7 @@ services:
 Extract all text from a base64-encoded data field into attachment.content:
 
 ```bash
-curl -k -u admin:Str0ngP@ssw0rd! \
+curl -k -u "admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD" \
   -X PUT https://localhost:9200/_ingest/pipeline/attachments \
   -H 'Content-Type: application/json' \
   -d '{
@@ -403,7 +403,7 @@ cat > payload.json <<EOF
 EOF
 
 # 2. Send via curl
-curl -k -u admin:Str0ngP@ssw0rd! \
+curl -k -u "admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD" \
   -X PUT "https://localhost:9200/documents/_doc/2?pipeline=attachments&refresh" \
   -H 'Content-Type: application/json' \
   --data @payload.json
@@ -418,7 +418,7 @@ rm payload.json
   echo -n '{"title":"My PDF","data":"'
   base64 < ./pdf/mydoc.pdf
   echo '"}'
-) | curl -k -u admin:Str0ngP@ssw0rd! \
+) | curl -k -u "admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD" \
       -X PUT "https://localhost:9200/documents/_doc/2?pipeline=attachments&refresh" \
       -H 'Content-Type: application/json' \
       --data @-
@@ -428,7 +428,7 @@ rm payload.json
 
 ## 9. Deleting the Documents Index
 ```bash
-curl -k -u admin:Str0ngP@ssw0rd! \
+curl -k -u "admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD" \
   -X DELETE https://localhost:9200/documents
 ```
 
