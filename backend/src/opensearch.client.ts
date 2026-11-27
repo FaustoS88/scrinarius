@@ -1,5 +1,12 @@
-import { Provider } from '@nestjs/common';
-import { Client } from '@opensearch-project/opensearch';
+import {
+  ArgumentsHost,
+  Catch,
+  ExceptionFilter,
+  Logger,
+  Provider,
+} from '@nestjs/common';
+import { Client, errors } from '@opensearch-project/opensearch';
+import { Response } from 'express';
 
 // Nest injects this client wherever a `Client` is asked for, authenticated with the key that scripts/setup-opensearch.sh writes to .env
 export const openSearchClient: Provider = {
@@ -18,3 +25,25 @@ export const openSearchClient: Provider = {
     });
   },
 };
+
+// OpenSearch errors carry the request with its Authorization header, so only their name, status and message are logged
+export function describeOpenSearchError(error: unknown): string {
+  if (!(error instanceof errors.OpenSearchClientError)) return String(error);
+  const status =
+    error instanceof errors.ResponseError ? ` ${error.statusCode}` : '';
+  return `${error.name}${status}: ${error.message}`;
+}
+
+@Catch(errors.OpenSearchClientError)
+export class OpenSearchErrorFilter implements ExceptionFilter {
+  private readonly logger = new Logger('OpenSearch');
+
+  catch(error: errors.OpenSearchClientError, host: ArgumentsHost) {
+    this.logger.error(describeOpenSearchError(error));
+    host
+      .switchToHttp()
+      .getResponse<Response>()
+      .status(500)
+      .json({ statusCode: 500, message: 'Internal server error' });
+  }
+}
