@@ -1,12 +1,23 @@
 #!/bin/sh
-# Creates the backend's OpenSearch API key, writes it to .env without printing it, then revokes the previous one.
+# Creates the attachments ingest pipeline and the backend's OpenSearch API key, writes the key to .env without printing it, then revokes the previous one.
 set -eu
 umask 077
 cd "$(dirname "$0")/.."
 set -a; . ./.env; set +a
-api=https://localhost:9200/_plugins/_security/api/apitokens
+os=https://localhost:9200
+api=$os/_plugins/_security/api/apitokens
 auth="admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD"
 old_id="${OPENSEARCH_API_KEY_ID:-}"
+
+# The backend indexes through this pipeline: it extracts the text of the base64 file in `data`, then drops the base64
+curl -sSfk -u "$auth" -X PUT "$os/_ingest/pipeline/attachments" -H 'Content-Type: application/json' -d '{
+  "description": "Extract the text of an uploaded file, then drop the base64",
+  "processors": [
+    {"attachment": {"field": "data", "target_field": "attachment", "indexed_chars": 100000, "ignore_missing": true}},
+    {"remove": {"field": "data", "ignore_missing": true}}
+  ]
+}' >/dev/null || { echo "OpenSearch refused the pipeline: is it up (docker compose up -d), with the password from .env?" >&2; exit 1; }
+echo "ingest pipeline attachments ready"
 
 resp=$(curl -sSfk -u "$auth" -X POST "$api" -H 'Content-Type: application/json' -d '{
   "name": "ts-fullstack-lab-backend-'"$(date +%Y%m%d%H%M%S)"'",
