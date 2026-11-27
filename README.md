@@ -87,6 +87,12 @@ Each day of work is documented in the `days/` folder with its own README file.
         npm run start:dev
         ```
 
+7.  **Check it works:**
+    With the backend running, the smoke test uploads a sample PDF and finds it by its text.
+    ```bash
+    ./scripts/smoke-test.sh
+    ```
+
 ---
 
 ## 🔐 Notes
