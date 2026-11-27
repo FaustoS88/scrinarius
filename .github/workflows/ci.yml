@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Lint, build and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: '*/package-lock.json'
+      - name: Backend
+        working-directory: backend
+        run: |
+          npm ci
+          npm run lint
+          npm run build
+          npm test
+      - name: Frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run lint
+          npm run build
+
+  smoke:
+    name: Smoke test against OpenSearch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - name: Write .env with an admin password made for this run
+        run: |
+          pw="$(openssl rand -hex 16)Aa1!"
+          echo "::add-mask::$pw"
+          printf "OPENSEARCH_INITIAL_ADMIN_PASSWORD='%s'\n" "$pw" > .env
+      - name: Start OpenSearch
+        run: |
+          docker build -t scrinarius-opensearch:latest .
+          docker compose up -d
+          set -a; . ./.env; set +a
+          timeout 300 sh -c 'until curl -skf -o /dev/null -u "admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD" https://localhost:9200; do sleep 5; done'
+      - name: Create the ingest pipeline and the API key
+        run: |
+          ./scripts/setup-opensearch.sh
+          set -a; . ./.env; set +a
+          echo "::add-mask::$OPENSEARCH_API_KEY"
+      - name: Start the API
+        working-directory: backend
+        run: |
+          npm ci
+          set -a; . ../.env; set +a
+          nohup npm run start:dev > ../api.log 2>&1 &
+          timeout 120 sh -c 'until curl -sf -o /dev/null http://localhost:3000/search; do sleep 2; done'
+      - run: ./scripts/smoke-test.sh
+      - name: Logs on failure
+        if: failure()
+        run: |
+          docker compose logs --tail 100 opensearch || true
+          cat api.log || true
