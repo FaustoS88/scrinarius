@@ -26,7 +26,7 @@ export class SearchService {
       const response = await this.client.search({
         index: INDEX,
         from: Math.max(from, 0),
-        size: Math.min(size, 100),
+        size: Math.min(Math.max(size, 0), 100),
         body: {
           query,
           // One fragment per hit, with the matched words wrapped in <em>

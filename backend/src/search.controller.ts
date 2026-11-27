@@ -1,4 +1,13 @@
-import { Body, Controller, Delete, Get, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  ParseIntPipe,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { IndexDocumentDto } from './dto/index-document.dto';
 import { SearchService } from './search.service';
 
@@ -9,10 +18,10 @@ export class SearchController {
   @Get()
   search(
     @Query('q') q = '',
-    @Query('from') from = '0',
-    @Query('size') size = '50',
+    @Query('from', new DefaultValuePipe(0), ParseIntPipe) from: number,
+    @Query('size', new DefaultValuePipe(50), ParseIntPipe) size: number,
   ): Promise<any[]> {
-    return this.searchService.search(q, parseInt(from, 10), parseInt(size, 10));
+    return this.searchService.search(q, from, size);
   }
 
   @Post('index')
