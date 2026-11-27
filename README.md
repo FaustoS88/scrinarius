@@ -28,7 +28,7 @@ cd scrinarius
 
 cp .env.example .env    # set OPENSEARCH_INITIAL_ADMIN_PASSWORD: a strong password, in single quotes
 
-docker build -t my-opensearch-ingest:latest .
+docker build -t scrinarius-opensearch:latest .
 docker compose up -d    # OpenSearch on https://localhost:9200
 
 # wait until OpenSearch answers, then create the ingest pipeline and the API's key

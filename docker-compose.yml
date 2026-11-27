@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   opensearch:
-    image: my-opensearch-ingest:latest
+    image: scrinarius-opensearch:latest
     environment:
       - discovery.type=single-node
       - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?set it in .env, see .env.example}
