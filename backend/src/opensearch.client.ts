@@ -3,7 +3,9 @@ import { Client } from '@opensearch-project/opensearch';
 
 const apiKey = process.env.OPENSEARCH_API_KEY;
 if (!apiKey) {
-  console.warn('OPENSEARCH_API_KEY is not set: run scripts/setup-opensearch.sh and load .env');
+  console.warn(
+    'OPENSEARCH_API_KEY is not set: run scripts/setup-opensearch.sh and load .env',
+  );
 }
 
 export const osClient = new Client({
