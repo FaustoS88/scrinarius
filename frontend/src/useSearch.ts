@@ -11,7 +11,7 @@ export interface SearchHit {
   highlight?: Record<string, string[]>;
 }
 
-// Custom hook to fetch and return search results with debouncing and cancellation
+// Searches `delay` ms after the query stops changing; a newer query aborts the older request
 export function useSearch(query: string, delay = 300) {
   const [results, setResults] = useState<SearchHit[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -21,38 +21,38 @@ export function useSearch(query: string, delay = 300) {
     if (!query) {
       setResults([]);
       setError(null);
+      setLoading(false);
       return;
     }
 
-    // Debounce the fetch
-    const handler = setTimeout(() => {
-      const controller = new AbortController();
-      setLoading(true);
-
+    const controller = new AbortController();
+    setLoading(true);
+    const timer = setTimeout(() => {
       fetch(`http://localhost:3000/search?q=${encodeURIComponent(query)}`, {
         signal: controller.signal,
       })
         .then(res => {
           if (!res.ok) throw new Error(res.statusText);
-          return res.json();
+          return res.json() as Promise<SearchHit[]>;
         })
-        .then((data: SearchHit[]) => {
+        .then(data => {
           setResults(data);
           setError(null);
         })
-        .catch(err => {
-          if (err.name !== 'AbortError') {
-            setError(err.message);
-          }
+        .catch((err: unknown) => {
+          if (controller.signal.aborted) return;
+          setResults([]);
+          setError(err instanceof Error ? err.message : String(err));
         })
-        .finally(() => setLoading(false));
-
-      // Cleanup to abort fetch if query changes
-      return () => controller.abort();
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
     }, delay);
 
-    // Cleanup debounce timer on query change
-    return () => clearTimeout(handler);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [query, delay]);
 
   return { results, error, loading };
