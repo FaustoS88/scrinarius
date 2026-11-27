@@ -4,6 +4,8 @@ Upload PDFs and search their text. A NestJS API sends each file through an OpenS
 
 *A scrinarius kept the scrinia, the boxes in which the Romans stored scrolls and documents.*
 
+![The search page: two PDFs found by the word "archive", highlighted in their text](docs/screenshot.png)
+
 ## How it works
 
 The page reads the chosen PDF in the browser and posts it as base64 to `POST /search/index`, with the file name as its title. The API accepts JSON bodies up to 50 MB, so PDFs up to about 37 MB. It validates the body (unknown fields are rejected) and indexes it into `documents` through the `attachments` pipeline. There, OpenSearch's ingest-attachment plugin extracts the text, up to 100,000 characters, into `attachment.content`, and the pipeline drops the base64 so search hits stay light. A document without a file (title, body, tags) is indexed as it is.
