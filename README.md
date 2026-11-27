@@ -1,5 +1,7 @@
 # scrinarius
 
+[![CI](https://github.com/FaustoS88/scrinarius/actions/workflows/ci.yml/badge.svg)](https://github.com/FaustoS88/scrinarius/actions/workflows/ci.yml)
+
 Upload PDFs and search their text. A NestJS API sends each file through an OpenSearch ingest pipeline that extracts the text, and a React page searches it as you type. The API reaches OpenSearch with a key scoped to its own index, never with the admin password.
 
 *A scrinarius kept the scrinia, the boxes in which the Romans stored scrolls and documents.*
@@ -63,6 +65,12 @@ With the API running, the smoke test uploads a sample PDF, finds it by a word of
 
 The compose file has no volumes, so `docker compose down` wipes the index and the key with it: after a fresh `up`, run the setup script again (its note that the previous key was not revoked is expected then). Run it again within 30 days as well, to replace the key.
 
+## Tests
+
+`cd backend && npm test` runs the unit tests of `SearchService`, against a fake OpenSearch client, and the HTTP tests of the API built from its real module with the service faked: routes, paging, validation and the answers to OpenSearch errors. The smoke test above covers the rest against a real OpenSearch.
+
+GitHub Actions runs both on every pull request and on every push to `develop` and `main` (`.github/workflows/ci.yml`). One job lints, builds and tests the API and lints and builds the page. The other builds the OpenSearch image, starts it with an admin password made for the run and masked in the logs, runs the setup script, starts the API and runs the smoke test.
+
 ## Layout
 
 - `backend/`: the NestJS API (the search controller over a `SearchService`, the OpenSearch client and its error filter, request validation).
@@ -70,6 +78,7 @@ The compose file has no volumes, so `docker compose down` wipes the index and th
 - `scripts/`: the setup script and the smoke test, with its sample PDF.
 - `Dockerfile`: OpenSearch 3.10.1 with the ingest-attachment plugin and API keys on.
 - `docker-compose.yml`: a single OpenSearch node.
+- `.github/workflows/ci.yml`: the two CI jobs.
 
 ## License
 
