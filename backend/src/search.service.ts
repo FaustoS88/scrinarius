@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Client } from '@opensearch-project/opensearch';
 import { IndexDocumentDto } from './dto/index-document.dto';
 
@@ -6,8 +6,6 @@ const INDEX = 'documents';
 
 @Injectable()
 export class SearchService {
-  private readonly logger = new Logger(SearchService.name);
-
   constructor(private readonly client: Client) {}
 
   // All the words of q in any field, or every document when q is empty
@@ -22,29 +20,23 @@ export class SearchService {
         }
       : { match_all: {} };
 
-    try {
-      const response = await this.client.search({
-        index: INDEX,
-        from: Math.max(from, 0),
-        size: Math.min(Math.max(size, 0), 100),
-        body: {
-          query,
-          // One fragment per hit, with the matched words wrapped in <em>
-          highlight: {
-            fields: { 'attachment.content': {}, body: {} },
-            fragment_size: 160,
-            number_of_fragments: 1,
-          },
+    const response = await this.client.search({
+      index: INDEX,
+      // Before the first upload there is no index: that is no hits, not an error
+      ignore_unavailable: true,
+      from: Math.max(from, 0),
+      size: Math.min(Math.max(size, 0), 100),
+      body: {
+        query,
+        // One fragment per hit, with the matched words wrapped in <em>
+        highlight: {
+          fields: { 'attachment.content': {}, body: {} },
+          fragment_size: 160,
+          number_of_fragments: 1,
         },
-      });
-      return response.body.hits.hits;
-    } catch (error: unknown) {
-      this.logger.error(
-        'Search error',
-        error instanceof Error ? error.stack : JSON.stringify(error),
-      );
-      return [];
-    }
+      },
+    });
+    return response.body.hits.hits;
   }
 
   // The attachments pipeline extracts the text of a base64 file in `data`; refresh makes the document searchable at once
