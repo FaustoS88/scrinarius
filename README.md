@@ -70,10 +70,10 @@ Each day of work is documented in the `days/` folder with its own README file.
     docker compose up -d
     ```
 
-5.  **Create the backend's API key:**
-    The backend logs in with an API key that reads and writes only the `documents` index, valid 30 days. The script writes it into `.env` without printing it; rerun it to replace the key. API keys need OpenSearch 3.7+ and a security index created by this image: if a container from an older image exists, run `docker compose down` first.
+5.  **Create the ingest pipeline and the backend's API key:**
+    The `attachments` pipeline extracts the text of each uploaded file. The backend logs in with an API key that reads and writes only the `documents` index, valid 30 days. The script writes it into `.env` without printing it; rerun it to replace the key. API keys need OpenSearch 3.7+ and a security index created by this image: if a container from an older image exists, run `docker compose down` first.
     ```bash
-    ./scripts/create-api-key.sh
+    ./scripts/setup-opensearch.sh
     ```
 
 6.  **Start development servers:**
