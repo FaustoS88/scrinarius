@@ -37,7 +37,15 @@ export class SearchController {
         index: 'documents',
         from: fromNum,
         size: sizeNum,
-        body: { query: queryContainer },
+        body: {
+          query: queryContainer,
+          // One fragment per hit, with the matched words wrapped in <em>
+          highlight: {
+            fields: { 'attachment.content': {}, body: {} },
+            fragment_size: 160,
+            number_of_fragments: 1,
+          },
+        },
       });
       return response.body.hits.hits;
     } catch (error: unknown) {
