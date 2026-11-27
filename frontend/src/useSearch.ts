@@ -1,14 +1,19 @@
 import { useState, useEffect } from 'react';
 
-// Define the shape of your search results
-interface SearchResult {
-  id: string;
-  // Add other fields returned by your backend
+// One OpenSearch hit as the backend returns it
+export interface SearchHit {
+  _id: string;
+  _source: {
+    title?: string;
+    body?: string;
+    attachment?: { content?: string; content_type?: string };
+  };
+  highlight?: Record<string, string[]>;
 }
 
 // Custom hook to fetch and return search results with debouncing and cancellation
 export function useSearch(query: string, delay = 300) {
-  const [results, setResults] = useState<SearchResult[]>([]);   
+  const [results, setResults] = useState<SearchHit[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +28,7 @@ export function useSearch(query: string, delay = 300) {
     const handler = setTimeout(() => {
       const controller = new AbortController();
       setLoading(true);
-      
+
       fetch(`http://localhost:3000/search?q=${encodeURIComponent(query)}`, {
         signal: controller.signal,
       })
@@ -31,7 +36,7 @@ export function useSearch(query: string, delay = 300) {
           if (!res.ok) throw new Error(res.statusText);
           return res.json();
         })
-        .then((data: SearchResult[]) => {
+        .then((data: SearchHit[]) => {
           setResults(data);
           setError(null);
         })

@@ -49,8 +49,8 @@ export function PdfUploader() {
   };
 
   return (
-    <div>
-      <h2>Upload PDF</h2>
+    <div className="upload">
+      <h2>Upload a PDF</h2>
       <input type="file" accept="application/pdf" onChange={onFileChange} />
       <button onClick={upload} disabled={!file || uploading}>
         {uploading ? 'Uploading…' : 'Upload'}
