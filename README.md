@@ -25,7 +25,7 @@ The page reads the chosen PDF in the browser and posts it as base64 to `POST /se
 
 ## Run it locally
 
-You need Docker and Node 20. Every command starts from the repo root.
+You need Docker and Node 24.15 or later. Every command starts from the repo root.
 
 ```bash
 git clone https://github.com/FaustoS88/scrinarius.git
