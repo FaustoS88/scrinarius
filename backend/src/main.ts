@@ -1,11 +1,22 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { describeOpenSearchError } from './opensearch.client';
+import { Logger, ValidationPipe } from '@nestjs/common';
+import { Client } from '@opensearch-project/opensearch';
 import { json, urlencoded } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Stop here if OpenSearch is down or refuses the key, rather than on the first request
+  try {
+    const { body } = await app.get(Client).info();
+    Logger.log(`OpenSearch OK ${body.version.number}`, 'OpenSearch');
+  } catch (error) {
+    Logger.error(describeOpenSearchError(error), 'OpenSearch');
+    process.exit(1);
+  }
 
   // The React page runs on another origin
   app.enableCors();

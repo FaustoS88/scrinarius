@@ -1,97 +1,36 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Delete,
   Body,
+  Controller,
+  DefaultValuePipe,
+  Delete,
+  Get,
+  ParseIntPipe,
+  Post,
   Query,
-  Logger,
 } from '@nestjs/common';
 import { IndexDocumentDto } from './dto/index-document.dto';
-import { osClient } from './opensearch.client';
+import { SearchService } from './search.service';
 
 @Controller('search')
 export class SearchController {
-  private readonly logger = new Logger(SearchController.name);
+  constructor(private readonly searchService: SearchService) {}
 
   @Get()
-  async search(
+  search(
     @Query('q') q = '',
-    @Query('from') from = '0',
-    @Query('size') size = '50',
+    @Query('from', new DefaultValuePipe(0), ParseIntPipe) from: number,
+    @Query('size', new DefaultValuePipe(50), ParseIntPipe) size: number,
   ): Promise<any[]> {
-    const fromNum = Math.max(parseInt(from, 10), 0);
-    const sizeNum = Math.min(parseInt(size, 10), 100);
-    const queryContainer = q
-      ? {
-          simple_query_string: {
-            query: q,
-            fields: ['*'],
-            default_operator: 'and' as const,
-          },
-        }
-      : { match_all: {} };
-
-    try {
-      const response = await osClient.search({
-        index: 'documents',
-        from: fromNum,
-        size: sizeNum,
-        body: {
-          query: queryContainer,
-          // One fragment per hit, with the matched words wrapped in <em>
-          highlight: {
-            fields: { 'attachment.content': {}, body: {} },
-            fragment_size: 160,
-            number_of_fragments: 1,
-          },
-        },
-      });
-      return response.body.hits.hits;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        this.logger.error('Search error', error.stack);
-      } else {
-        this.logger.error('Search error', JSON.stringify(error));
-      }
-      return [];
-    }
+    return this.searchService.search(q, from, size);
   }
 
   @Post('index')
-  async indexDoc(@Body() doc: IndexDocumentDto): Promise<{ indexed: string }> {
-    const id = doc.id ?? Date.now().toString();
-    try {
-      await osClient.index({
-        index: 'documents',
-        id,
-        body: doc,
-        pipeline: 'attachments',
-        refresh: 'true',
-      });
-      return { indexed: id };
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        this.logger.error('Index error', error.stack);
-      } else {
-        this.logger.error('Index error', JSON.stringify(error));
-      }
-      throw error;
-    }
+  indexDoc(@Body() doc: IndexDocumentDto): Promise<{ indexed: string }> {
+    return this.searchService.index(doc);
   }
 
   @Delete('index')
-  async deleteIndex(): Promise<any> {
-    try {
-      const response = await osClient.indices.delete({ index: 'documents' });
-      return response.body;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        this.logger.error('Delete index error', error.stack);
-      } else {
-        this.logger.error('Delete index error', JSON.stringify(error));
-      }
-      throw error;
-    }
+  deleteIndex(): Promise<any> {
+    return this.searchService.deleteIndex();
   }
 }
