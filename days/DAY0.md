@@ -165,7 +165,7 @@ services:
     image: opensearchproject/opensearch:2.13.0
     environment:
       - discovery.type=single-node
-      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=Str0ngP@ssw0rd! # Use a secure password
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD} # set in .env, see .env.example
     ports:
       - "9200:9200" # Maps container port 9200 to host port 9200
     # volumes: # Optional: Persist OpenSearch data
@@ -183,7 +183,7 @@ docker compose up -d
 **Verify OpenSearch Connection:**
 
 ```bash
-curl -k -u admin:Str0ngP@ssw0rd! https://localhost:9200
+curl -k -u "admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD" https://localhost:9200
 ```
 *(Note: `-k` allows insecure connections, suitable for local dev with self-signed certs)*
 
@@ -201,11 +201,16 @@ npm i @opensearch-project/opensearch
 
 import { Client } from '@opensearch-project/opensearch';
 
+const password = process.env.OPENSEARCH_INITIAL_ADMIN_PASSWORD;
+if (!password) {
+  console.warn('OPENSEARCH_INITIAL_ADMIN_PASSWORD is not set: copy .env.example to .env and load it');
+}
+
 export const osClient = new Client({
   node: 'https://localhost:9200', // Ensure this matches your OpenSearch URL
   auth: {
     username: 'admin', // Default admin username
-    password: 'Str0ngP@ssw0rd!', // Password set in docker-compose.yml
+    password: password ?? '',
   },
   ssl: {
     // For local development with self-signed certificates

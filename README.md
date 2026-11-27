@@ -33,10 +33,10 @@ ts-fullstack-lab/
 
 Each day of work is documented in the `days/` folder with its own README file.
 
--   [`days/DAY0.md`](ts-fullstack-lab/days/DAY0.md): Project initialization, backend/frontend scaffolding, and OpenSearch setup.
--   [`days/DAY1.md`](ts-fullstack-lab/days/DAY1.md): Everyday types practice and a simple CLI calculator.
--   [`days/DAY2.md`](ts-fullstack-lab/days/DAY2.md): Generics, utility types, and `fetch` demonstrations.
--   [`days/DAY3.md`](ts-fullstack-lab/days/DAY3.md): Basic Nest search endpoint consumed from React.
+-   [`days/DAY0.md`](days/DAY0.md): Project initialization, backend/frontend scaffolding, and OpenSearch setup.
+-   [`days/DAY1.md`](days/DAY1.md): Everyday types practice and a simple CLI calculator.
+-   [`days/DAY2.md`](days/DAY2.md): Generics, utility types, and `fetch` demonstrations.
+-   [`days/DAY3.md`](days/DAY3.md): Basic Nest search endpoint consumed from React.
 
 ---
 
@@ -58,14 +58,21 @@ Each day of work is documented in the `days/` folder with its own README file.
     cd .. # Return to project root
     ```
 
-3.  **Run OpenSearch service:**
+3.  **Set the OpenSearch admin password:**
+    Copy `.env.example` to `.env` and fill in a strong password; `.env` is git-ignored.
+    ```bash
+    cp .env.example .env
+    ```
+
+4.  **Run OpenSearch service:**
     ```bash
     docker compose up -d
     ```
 
-4.  **Start development servers:**
-    -   In the `backend` directory:
+5.  **Start development servers:**
+    -   In the `backend` directory, with `.env` loaded:
         ```bash
+        set -a; . ../.env; set +a
         npm run start:dev
         ```
     -   In the `frontend` directory:
