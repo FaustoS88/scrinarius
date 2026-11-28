@@ -5,6 +5,7 @@ services:
     environment:
       - discovery.type=single-node
       # The API sends a file as base64 in one JSON string: 50 MiB is about 70 million characters, past OpenSearch's default of 50 million
+      # scripts/large-upload-test.sh, run by CI, uploads one byte under 50 MiB and fails without this line
       - OPENSEARCH_JAVA_OPTS=-Dopensearch.xcontent.string.length.max=70000000
       - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?set it in .env, see .env.example}
     ports:
