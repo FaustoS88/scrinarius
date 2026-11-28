@@ -20,7 +20,7 @@ curl -sSfk -u "$auth" -X PUT "$os/_ingest/pipeline/attachments" -H 'Content-Type
 echo "ingest pipeline attachments ready"
 
 resp=$(curl -sSfk -u "$auth" -X POST "$api" -H 'Content-Type: application/json' -d '{
-  "name": "ts-fullstack-lab-backend-'"$(date +%Y%m%d%H%M%S)"'",
+  "name": "scriniarius-backend-'"$(date +%Y%m%d%H%M%S)"'",
   "cluster_permissions": ["cluster:monitor/main", "indices:data/write/bulk"],
   "index_permissions": [{"index_pattern": ["documents"], "allowed_actions": ["crud", "manage"]}],
   "duration_seconds": 2592000
