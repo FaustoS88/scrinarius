@@ -157,6 +157,20 @@ describe('SearchController', () => {
       });
   });
 
+  it('answers 429 when OpenSearch is too busy to take a document', async () => {
+    service.index.mockRejectedValue(
+      openSearchError(429, { error: { type: 'rejected_execution_exception' } }),
+    );
+
+    await request(app.getHttpServer())
+      .post('/search/index')
+      .send({ title: 'note' })
+      .expect(429, {
+        statusCode: 429,
+        message: 'OpenSearch is busy, try again',
+      });
+  });
+
   it('answers 500 to any other OpenSearch failure and logs it without the request headers', async () => {
     const log = jest.spyOn(Logger.prototype, 'error').mockImplementation();
     service.search.mockRejectedValue(openSearchError(401, 'Unauthorized'));
