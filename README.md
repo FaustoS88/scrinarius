@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/FaustoS88/scrinarius/actions/workflows/ci.yml/badge.svg)](https://github.com/FaustoS88/scrinarius/actions/workflows/ci.yml)
 
-Upload PDFs and search their text. A NestJS API sends each file through an OpenSearch ingest pipeline that extracts the text, and a React page searches it as you type. The API reaches OpenSearch with a key scoped to its own index, never with the admin password.
+Upload PDFs and search their text. A NestJS API sends each file through an OpenSearch ingest pipeline that extracts the text, and a React page searches it as you type.
 
 *A scrinarius kept the scrinia, the boxes in which the Romans stored scrolls and documents.*
 
