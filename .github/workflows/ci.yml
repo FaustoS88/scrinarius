@@ -39,11 +39,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: npm
-          cache-dependency-path: backend/package-lock.json
       - name: Write .env with an admin password made for this run
         run: |
           pw="$(openssl rand -hex 16)Aa1!"
@@ -52,24 +47,19 @@ jobs:
       - name: Start OpenSearch
         run: |
           docker build -t scrinarius-opensearch:latest .
-          docker compose up -d
-          set -a; . ./.env; set +a
-          timeout 300 sh -c 'until curl -skf -o /dev/null -u "admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD" https://localhost:9200; do sleep 5; done'
+          docker compose up -d --wait opensearch
       - name: Create the ingest pipeline and the API key
         run: |
           ./scripts/setup-opensearch.sh
           set -a; . ./.env; set +a
           echo "::add-mask::$OPENSEARCH_API_KEY"
-      - name: Start the API
-        working-directory: backend
+      - name: Start the API and the page
         run: |
-          npm ci
-          set -a; . ../.env; set +a
-          nohup npm run start:dev > ../api.log 2>&1 &
+          docker compose up -d --build
           timeout 120 sh -c 'until curl -sf -o /dev/null http://localhost:3000/search; do sleep 2; done'
       - run: ./scripts/smoke-test.sh
+      - name: The page is served
+        run: curl -sf http://localhost:5173 | grep -q '<title>scrinarius</title>'
       - name: Logs on failure
         if: failure()
-        run: |
-          docker compose logs --tail 100 opensearch || true
-          cat api.log || true
+        run: docker compose logs --tail 100 || true

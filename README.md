@@ -4,13 +4,13 @@
 
 Upload PDFs and search their text. A NestJS API sends each file through an OpenSearch ingest pipeline that extracts the text, and a React page searches it as you type.
 
-*A scrinarius kept the scrinia, the boxes in which the Romans stored scrolls and documents.*
+*The name shortens scriniarius, the Latin title of a clerk of the scrinia: the boxes, and later the offices, in which the Romans kept scrolls and documents.*
 
 ![The search page: two PDFs found by the word "archive", highlighted in their text](docs/screenshot.png)
 
 ## How it works
 
-The page posts the chosen PDF as multipart to `POST /search/index`, in a `file` part with the file name as its `title`; from a terminal, `curl -F file=@report.pdf -F title=report.pdf http://localhost:3000/search/index` does the same. The API takes files up to 50 MiB and answers 413 above that. It validates the other fields (unknown ones are rejected), turns the file into the base64 that OpenSearch's attachment processor reads (OpenSearch accepts at most 50 million characters in one JSON string, about 35 MiB of file, so the compose file raises that to 70 million), and indexes the document into `documents` through the `attachments` pipeline. There, OpenSearch's ingest-attachment plugin extracts the text, up to 100,000 characters, into `attachment.content`, and the pipeline drops the base64 so search hits stay light. A document without a file (title, body, tags) can also come as JSON, up to 100 KB, and is indexed as it is. OpenSearch answers 429 when it is too busy to take a document, for instance with two large uploads at once; the API passes that on, so the caller can try again.
+The page posts the chosen PDF as multipart to `POST /search/index`, in a `file` part with the file name as its `title`; from a terminal, `curl -F file=@report.pdf -F title=report.pdf http://localhost:3000/search/index` does the same. The API takes files up to 50 MiB and answers 413 above that. It validates the other fields (unknown ones are rejected), turns the file into the base64 that OpenSearch's attachment processor reads (OpenSearch accepts at most 50 million characters in one JSON string, about 36 MiB of file, so the compose file raises that to 70 million), and indexes the document into `documents` through the `attachments` pipeline. There, OpenSearch's ingest-attachment plugin extracts the text, up to 100,000 characters, into `attachment.content`, and the pipeline drops the base64 so search hits stay light. A document without a file (title, body, tags) can also come as JSON, up to 100 KB, and is indexed as it is. OpenSearch answers 429 when it is too busy to take a document, for instance with two large uploads at once; the API passes that on, so the caller can try again.
 
 `GET /search?q=...` runs a `simple_query_string` over every field, with `from` and `size` (up to 100) for paging; before the first upload it answers an empty list. Paging that is not a number gets a 400, and so does a request OpenSearch refuses, such as paging past the first 10,000 hits, with OpenSearch's reason. The page calls it 300 ms after you stop typing. `DELETE /search/index` drops the index.
 
@@ -19,13 +19,13 @@ The page posts the chosen PDF as multipart to `POST /search/index`, in a `file` 
 - The API sends `Authorization: ApiKey ...` with a key that can read, write and manage only the `documents` index; on the cluster it gets just `cluster:monitor/main`, for the startup check, and `indices:data/write/bulk`. The key lasts 30 days.
 - `scripts/setup-opensearch.sh` creates the key as admin, writes it to `.env` without printing it, and revokes the previous key only after the new one is saved.
 - OpenSearch errors carry the request with its `Authorization` header, so the API logs only their name, status and message.
-- Secrets live only in `.env`, which git ignores; `.env.example` has empty values.
+- Secrets live in `.env`, which git ignores and `.dockerignore` keeps out of image builds; compose passes each container only what it needs, the admin password to OpenSearch and the key to the API. `.env.example` has empty values.
 - OpenSearch is pinned to 3.10.1 (API keys need 3.7 or later), and the image turns API keys on before the security index is first created: the build fails if that edit does not land.
-- This setup is for local development: OpenSearch serves a self-signed certificate, and the API's client accepts it.
+- This setup is for local development: OpenSearch serves the demo certificate it ships with, signed by its own demo CA, and the API's client accepts it without checking it.
 
 ## Run it locally
 
-You need Docker and Node 24.15 or later. Every command starts from the repo root.
+You need Docker and curl. Every command starts from the repo root.
 
 ```bash
 git clone https://github.com/FaustoS88/scrinarius.git
@@ -34,42 +34,39 @@ cd scrinarius
 cp .env.example .env    # set OPENSEARCH_INITIAL_ADMIN_PASSWORD: a strong password, in single quotes
 
 docker build -t scrinarius-opensearch:latest .
-docker compose up -d    # OpenSearch on https://localhost:9200
+docker compose up -d --wait opensearch    # OpenSearch on https://localhost:9200, once it answers
+./scripts/setup-opensearch.sh             # the ingest pipeline and the API's key, written to .env
 
-# wait until OpenSearch answers, then create the ingest pipeline and the API's key
-set -a; . ./.env; set +a
-until curl -skf -o /dev/null -u "admin:$OPENSEARCH_INITIAL_ADMIN_PASSWORD" https://localhost:9200; do sleep 5; done
-./scripts/setup-opensearch.sh
+docker compose up -d --build              # the API on port 3000 and the page on http://localhost:5173
 ```
 
-In a second terminal, start the API, which logs `OpenSearch OK 3.10.1` and listens on port 3000 (if OpenSearch is down or refuses the key, it stops there):
-
-```bash
-cd backend && npm install
-set -a; . ../.env; set +a
-npm run start:dev
-```
-
-In a third terminal, start the page, served by Vite on http://localhost:5173:
-
-```bash
-cd frontend && npm install
-npm run start:dev
-```
-
-With the API running, the smoke test uploads a sample PDF, finds it by a word of its text, and deletes what it wrote:
+The API checks OpenSearch and its key when it starts and stops there if either fails; `docker compose logs api` shows `OpenSearch OK 3.10.1` when both are fine. The smoke test uploads a sample PDF through the API, finds it by a word of its text, and deletes what it wrote:
 
 ```bash
 ./scripts/smoke-test.sh
 ```
 
-The compose file has no volumes, so `docker compose down` wipes the index and the key with it: after a fresh `up`, run the setup script again (its note that the previous key was not revoked is expected then). Run it again within 30 days as well, to replace the key.
+The OpenSearch image is built with `docker build`, not by compose, because a new image means a new OpenSearch container, and the compose file has no volumes: a new container starts without the index and the key. After `docker compose down`, or after rebuilding that image, bring OpenSearch up and run the setup script again (its note that the previous key was not revoked is expected then) before `docker compose up -d`. Run the script again within 30 days as well, to replace the key; `docker compose up -d` then restarts the API with the new one.
+
+## Develop
+
+To work on the code with reload on save, run only OpenSearch in Docker (the first steps above, or `docker compose stop api page` if everything is up), and start the API and the page with Node 24.15 or later, each in its own terminal:
+
+```bash
+cd backend && npm install
+(set -a; . ../.env; set +a; npm run start:dev)    # the API on port 3000, with .env loaded only for it
+```
+
+```bash
+cd frontend && npm install
+npm run start:dev    # the page, served by Vite on http://localhost:5173
+```
 
 ## Tests
 
 `cd backend && npm test` runs the unit tests of `SearchService`, against a fake OpenSearch client, and the HTTP tests of the API built from its real module with the service faked: routes, paging, validation and the answers to OpenSearch errors. `cd frontend && npm test` renders the page in jsdom with `fetch` faked: the results with the matched words marked and any other HTML shown as text, the empty and error states, `?q=` in the address and the upload. The smoke test above covers the rest against a real OpenSearch.
 
-GitHub Actions runs them on every pull request and on every push to `develop` and `main` (`.github/workflows/ci.yml`). One job lints, builds and tests the API and the page. The other builds the OpenSearch image, starts it with an admin password made for the run and masked in the logs, runs the setup script, starts the API and runs the smoke test.
+GitHub Actions runs them on every pull request and on every push to `develop` and `main` (`.github/workflows/ci.yml`). One job lints, builds and tests the API and the page. The other builds the OpenSearch image, starts it with an admin password made for the run and masked in the logs, runs the setup script, starts the API and the page from the compose file, runs the smoke test and checks that the page is served.
 
 ## Layout
 
@@ -77,7 +74,8 @@ GitHub Actions runs them on every pull request and on every push to `develop` an
 - `frontend/`: the React page (PDF upload, search as you type).
 - `scripts/`: the setup script and the smoke test, with its sample PDF.
 - `Dockerfile`: OpenSearch 3.10.1 with the ingest-attachment plugin and API keys on.
-- `docker-compose.yml`: a single OpenSearch node.
+- `backend/Dockerfile`, `frontend/Dockerfile`: the API on Node 24, and the page built by Vite and served by nginx. Both build from the repo root.
+- `docker-compose.yml`: a single OpenSearch node, the API and the page.
 - `.github/workflows/ci.yml`: the two CI jobs.
 
 ## License

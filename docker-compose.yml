@@ -1,6 +1,6 @@
-version: "3.9"
 services:
   opensearch:
+    # Built from the root Dockerfile with docker build, not by compose: a rebuild here would recreate the container and wipe the index and the key
     image: scrinarius-opensearch:latest
     environment:
       - discovery.type=single-node
@@ -9,3 +9,28 @@ services:
       - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?set it in .env, see .env.example}
     ports:
       - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -skf -o /dev/null -u \"admin:$$OPENSEARCH_INITIAL_ADMIN_PASSWORD\" https://localhost:9200"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+  api:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    environment:
+      - OPENSEARCH_URL=https://opensearch:9200
+      # Empty until scripts/setup-opensearch.sh writes it to .env: the API then stops at its startup check
+      - OPENSEARCH_API_KEY=${OPENSEARCH_API_KEY:-}
+    ports:
+      - "3000:3000"
+    depends_on:
+      opensearch:
+        condition: service_healthy
+
+  page:
+    build: { context: ., dockerfile: frontend/Dockerfile }
+    # The page calls the API at http://localhost:3000 from the browser
+    ports:
+      - "5173:80"
+    depends_on:
+      - api

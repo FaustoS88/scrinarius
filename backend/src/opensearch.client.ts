@@ -19,7 +19,7 @@ export const openSearchClient: Provider = {
       );
     }
     return new Client({
-      node: 'https://localhost:9200',
+      node: process.env.OPENSEARCH_URL ?? 'https://localhost:9200',
       headers: { Authorization: `ApiKey ${apiKey ?? ''}` },
       ssl: { rejectUnauthorized: false },
     });
