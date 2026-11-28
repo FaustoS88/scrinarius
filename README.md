@@ -1,10 +1,10 @@
-# scrinarius
+# scriniarius
 
-[![CI](https://github.com/FaustoS88/scrinarius/actions/workflows/ci.yml/badge.svg)](https://github.com/FaustoS88/scrinarius/actions/workflows/ci.yml)
+[![CI](https://github.com/FaustoS88/scriniarius/actions/workflows/ci.yml/badge.svg)](https://github.com/FaustoS88/scriniarius/actions/workflows/ci.yml)
 
 Upload PDFs and search their text. A NestJS API sends each file through an OpenSearch ingest pipeline that extracts the text, and a React page searches it as you type.
 
-*The name shortens scriniarius, the Latin title of a clerk of the scrinia: the boxes, and later the offices, in which the Romans kept scrolls and documents.*
+*A scriniarius was a clerk of the scrinia: the boxes, and later the offices, in which the Romans kept scrolls and documents.*
 
 ![The search page: two PDFs found by the word "archive", highlighted in their text](docs/screenshot.png)
 
@@ -28,12 +28,12 @@ The page posts the chosen PDF as multipart to `POST /search/index`, in a `file` 
 You need Docker and curl. Every command starts from the repo root.
 
 ```bash
-git clone https://github.com/FaustoS88/scrinarius.git
-cd scrinarius
+git clone https://github.com/FaustoS88/scriniarius.git
+cd scriniarius
 
 cp .env.example .env    # set OPENSEARCH_INITIAL_ADMIN_PASSWORD: a strong password, in single quotes
 
-docker build -t scrinarius-opensearch:latest .
+docker build -t scriniarius-opensearch:latest .
 docker compose up -d --wait opensearch    # OpenSearch on https://localhost:9200, once it answers
 ./scripts/setup-opensearch.sh             # the ingest pipeline and the API's key, written to .env
 
