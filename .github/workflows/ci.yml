@@ -32,6 +32,7 @@ jobs:
           npm ci
           npm run lint
           npm run build
+          npm test
 
   smoke:
     name: Smoke test against OpenSearch
