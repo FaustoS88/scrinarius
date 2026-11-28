@@ -64,15 +64,15 @@ npm run start:dev    # the page, served by Vite on http://localhost:5173
 
 ## Tests
 
-`cd backend && npm test` runs the unit tests of `SearchService`, against a fake OpenSearch client, and the HTTP tests of the API built from its real module with the service faked: routes, paging, validation and the answers to OpenSearch errors. `cd frontend && npm test` renders the page in jsdom with `fetch` faked: the results with the matched words marked and any other HTML shown as text, the empty and error states, `?q=` in the address and the upload. The smoke test above covers the rest against a real OpenSearch.
+`cd backend && npm test` runs the unit tests of `SearchService`, against a fake OpenSearch client, and the HTTP tests of the API built from its real module with the service faked: routes, paging, validation and the answers to OpenSearch errors. `cd frontend && npm test` renders the page in jsdom with `fetch` faked: the results with the matched words marked and any other HTML shown as text, the empty and error states, `?q=` in the address and the upload. The smoke test above covers the rest against a real OpenSearch. `./scripts/large-upload-test.sh` uploads the largest PDF the API takes, one byte under 50 MiB, and finds it by its text: its base64 fits in one JSON string only because the compose file raises OpenSearch's limit, so the test fails if that line goes.
 
-GitHub Actions runs them on every pull request and on every push to `develop` and `main` (`.github/workflows/ci.yml`). One job lints, builds and tests the API and the page. The other builds the OpenSearch image, starts it with an admin password made for the run and masked in the logs, runs the setup script, starts the API and the page from the compose file, runs the smoke test and checks that the page is served.
+GitHub Actions runs them on every pull request and on every push to `develop` and `main` (`.github/workflows/ci.yml`). One job lints, builds and tests the API and the page. The other builds the OpenSearch image, starts it with an admin password made for the run and masked in the logs, runs the setup script, starts the API and the page from the compose file, runs the smoke test and the large upload, and checks that the page is served.
 
 ## Layout
 
 - `backend/`: the NestJS API (the search controller over a `SearchService`, the OpenSearch client and its error filter, request validation).
 - `frontend/`: the React page (PDF upload, search as you type).
-- `scripts/`: the setup script and the smoke test, with its sample PDF.
+- `scripts/`: the setup script, the smoke test with its sample PDF, and the large upload test with the script that writes its PDF.
 - `Dockerfile`: OpenSearch 3.10.1 with the ingest-attachment plugin and API keys on.
 - `backend/Dockerfile`, `frontend/Dockerfile`: the API on Node 24, and the page built by Vite and served by nginx. Both build from the repo root.
 - `docker-compose.yml`: a single OpenSearch node, the API and the page.
