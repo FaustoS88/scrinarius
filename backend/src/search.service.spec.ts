@@ -72,18 +72,30 @@ describe('SearchService', () => {
     );
   });
 
-  it('indexes through the attachments pipeline and makes the document searchable at once', async () => {
-    const doc = { id: 'harbour', title: 'harbour.pdf', data: 'JVBERi0=' };
+  it('indexes the file as base64 through the attachments pipeline and makes the document searchable at once', async () => {
+    const doc = { id: 'harbour', title: 'harbour.pdf' };
     client.index.mockResolvedValue({ body: {} });
 
-    await expect(service.index(doc)).resolves.toEqual({ indexed: 'harbour' });
+    await expect(service.index(doc, Buffer.from('%PDF-'))).resolves.toEqual({
+      indexed: 'harbour',
+    });
     expect(client.index).toHaveBeenCalledWith({
       index: 'documents',
       id: 'harbour',
-      body: doc,
+      body: { id: 'harbour', title: 'harbour.pdf', data: 'JVBERi0=' },
       pipeline: 'attachments',
       refresh: 'true',
     });
+  });
+
+  it('indexes a document without a file as it is', async () => {
+    const doc = { id: 'note-1', title: 'note', body: 'a lighthouse' };
+    client.index.mockResolvedValue({ body: {} });
+
+    await service.index(doc);
+    expect(client.index).toHaveBeenCalledWith(
+      expect.objectContaining({ body: doc }),
+    );
   });
 
   it('gives a document without an id one, and answers with it', async () => {

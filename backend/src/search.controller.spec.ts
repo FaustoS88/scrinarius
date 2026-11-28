@@ -75,13 +75,48 @@ describe('SearchController', () => {
       .post('/search/index')
       .send(doc)
       .expect(201, { indexed: 'note-1' });
-    expect(service.index).toHaveBeenCalledWith(doc);
+    expect(service.index).toHaveBeenCalledWith(doc, undefined);
+  });
+
+  it('indexes a file sent as multipart, with the fields beside it', async () => {
+    service.index.mockResolvedValue({ indexed: 'harbour' });
+
+    await request(app.getHttpServer())
+      .post('/search/index')
+      .field('id', 'harbour')
+      .field('title', 'harbour.pdf')
+      .attach('file', Buffer.from('%PDF-1.4 harbour'), 'harbour.pdf')
+      .expect(201, { indexed: 'harbour' });
+    const [doc, file] = service.index.mock.calls[0] as [object, Buffer];
+    expect({ ...doc }).toEqual({ id: 'harbour', title: 'harbour.pdf' });
+    expect(file.toString()).toBe('%PDF-1.4 harbour');
+  });
+
+  it('answers 400 to a text field over 100 KB', async () => {
+    await request(app.getHttpServer())
+      .post('/search/index')
+      .field('body', 'a'.repeat(100 * 1024 + 1))
+      .attach('file', Buffer.from('%PDF-1.4'), 'note.pdf')
+      .expect(400);
+    expect(service.index).not.toHaveBeenCalled();
+  });
+
+  it('answers 413 to a file over 50 MB', async () => {
+    await request(app.getHttpServer())
+      .post('/search/index')
+      .attach('file', Buffer.alloc(50 * 1024 * 1024 + 1), 'big.pdf')
+      .expect(413);
+    expect(service.index).not.toHaveBeenCalled();
   });
 
   it.each([
     ['a field the API does not know', { title: 'note', author: 'someone' }],
     ['a title that is not text', { title: 42 }],
     ['an empty list of tags', { title: 'note', tags: [] }],
+    [
+      'a file as base64 inside JSON',
+      { title: 'harbour.pdf', data: 'JVBERi0=' },
+    ],
   ])('answers 400 to a document with %s', async (_case, doc) => {
     await request(app.getHttpServer())
       .post('/search/index')
@@ -99,24 +134,40 @@ describe('SearchController', () => {
   });
 
   it('answers 400 with the reason when OpenSearch refuses the input', async () => {
-    service.index.mockRejectedValue(
+    service.search.mockRejectedValue(
       openSearchError(400, {
         error: {
           type: 'illegal_argument_exception',
           root_cause: [
-            { type: 'illegal_argument_exception', reason: 'Illegal base64' },
+            {
+              type: 'illegal_argument_exception',
+              reason: 'Result window is too large',
+            },
           ],
         },
       }),
     );
 
     await request(app.getHttpServer())
-      .post('/search/index')
-      .send({ title: 'broken.pdf', data: 'not base64' })
+      .get('/search?q=harbour&from=20000')
       .expect(400, {
         statusCode: 400,
         message:
-          'illegal_argument_exception: [illegal_argument_exception] Reason: Illegal base64',
+          'illegal_argument_exception: [illegal_argument_exception] Reason: Result window is too large',
+      });
+  });
+
+  it('answers 429 when OpenSearch is too busy to take a document', async () => {
+    service.index.mockRejectedValue(
+      openSearchError(429, { error: { type: 'rejected_execution_exception' } }),
+    );
+
+    await request(app.getHttpServer())
+      .post('/search/index')
+      .send({ title: 'note' })
+      .expect(429, {
+        statusCode: 429,
+        message: 'OpenSearch is busy, try again',
       });
   });
 

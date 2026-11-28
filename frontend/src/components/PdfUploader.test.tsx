@@ -22,7 +22,7 @@ afterEach(() => {
 
 const pdf = new File(['%PDF-1.4 aardvark'], 'report.pdf', { type: 'application/pdf' });
 
-it('posts the chosen PDF with its name and shows the id it was indexed with', async () => {
+it('posts the chosen PDF as multipart with its name and shows the id it was indexed with', async () => {
   const fetch = answer(201, { indexed: '42' });
   upload(pdf);
 
@@ -30,8 +30,11 @@ it('posts the chosen PDF with its name and shows the id it was indexed with', as
   const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
   expect(url).toBe('http://localhost:3000/search/index');
   expect(init.method).toBe('POST');
-  expect(init.headers).toEqual({ 'Content-Type': 'application/json' });
-  expect(JSON.parse(init.body as string)).toEqual({ title: 'report.pdf', data: btoa('%PDF-1.4 aardvark') });
+  // A Content-Type set by hand would lack the boundary the browser adds
+  expect(init.headers).toBeUndefined();
+  const form = init.body as FormData;
+  expect(form.get('title')).toBe('report.pdf');
+  expect(await (form.get('file') as File).text()).toBe('%PDF-1.4 aardvark');
 });
 
 it('shows why an upload failed', async () => {

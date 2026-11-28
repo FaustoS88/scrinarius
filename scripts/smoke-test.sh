@@ -5,7 +5,6 @@ cd "$(dirname "$0")"
 set -a; . ../.env; set +a
 api=${API_URL:-http://localhost:3000}
 id="smoke-$(date +%s)-$$"
-data=$(base64 < fixtures/sample.pdf | tr -d '\n')
 
 # Deletes this run's two documents at exit, so repeated runs do not pile up matches
 cleanup() {
@@ -15,8 +14,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-curl -sSf -X POST "$api/search/index" -H 'Content-Type: application/json' \
-  -d "{\"id\":\"$id\",\"title\":\"sample.pdf\",\"data\":\"$data\"}" >/dev/null
+curl -sSf "$api/search/index" -F "id=$id" -F title=sample.pdf -F file=@fixtures/sample.pdf >/dev/null
 curl -sSf -X POST "$api/search/index" -H 'Content-Type: application/json' \
   -d "{\"id\":\"$id-text\",\"title\":\"plain note\",\"body\":\"an aardvark without a file\"}" >/dev/null
 hits=$(curl -sSf "$api/search?q=aardvark")

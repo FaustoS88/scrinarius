@@ -19,21 +19,13 @@ export function PdfUploader() {
     }
     setUploading(true);
     try {
-      // Read as base64
-      const data = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          const b64 = (reader.result as string).split(',', 2)[1];
-          resolve(b64);
-        };
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-      });
-
+      // Sent as multipart, as it is; the browser sets the Content-Type with its boundary
+      const form = new FormData();
+      form.append('title', file.name);
+      form.append('file', file);
       const resp = await fetch('http://localhost:3000/search/index', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: file.name, data }),
+        body: form,
       });
 
       if (!resp.ok) {

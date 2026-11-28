@@ -40,17 +40,22 @@ export class OpenSearchErrorFilter implements ExceptionFilter {
 
   catch(error: errors.OpenSearchClientError, host: ArgumentsHost) {
     this.logger.error(describeOpenSearchError(error));
-    // A 400 from OpenSearch means the caller's input was invalid, such as an offset past 10,000 hits or a file that is not base64
-    const rejected =
-      error instanceof errors.ResponseError && error.statusCode === 400;
-    host
-      .switchToHttp()
-      .getResponse<Response>()
-      .status(rejected ? 400 : 500)
-      .json(
-        rejected
-          ? { statusCode: 400, message: error.message }
-          : { statusCode: 500, message: 'Internal server error' },
-      );
+    const status =
+      error instanceof errors.ResponseError ? error.statusCode : undefined;
+    const response = host.switchToHttp().getResponse<Response>();
+    // A 400 from OpenSearch means the caller's input was invalid, such as an offset past 10,000 hits or a repeated q
+    if (status === 400) {
+      response.status(400).json({ statusCode: 400, message: error.message });
+    } else if (status === 429) {
+      // OpenSearch is busy, for instance with two large uploads at once: the caller can try again
+      response.status(429).json({
+        statusCode: 429,
+        message: 'OpenSearch is busy, try again',
+      });
+    } else {
+      response
+        .status(500)
+        .json({ statusCode: 500, message: 'Internal server error' });
+    }
   }
 }

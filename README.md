@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/FaustoS88/scrinarius/actions/workflows/ci.yml/badge.svg)](https://github.com/FaustoS88/scrinarius/actions/workflows/ci.yml)
 
-Upload PDFs and search their text. A NestJS API sends each file through an OpenSearch ingest pipeline that extracts the text, and a React page searches it as you type. The API reaches OpenSearch with a key scoped to its own index, never with the admin password.
+Upload PDFs and search their text. A NestJS API sends each file through an OpenSearch ingest pipeline that extracts the text, and a React page searches it as you type.
 
 *A scrinarius kept the scrinia, the boxes in which the Romans stored scrolls and documents.*
 
@@ -10,9 +10,9 @@ Upload PDFs and search their text. A NestJS API sends each file through an OpenS
 
 ## How it works
 
-The page reads the chosen PDF in the browser and posts it as base64 to `POST /search/index`, with the file name as its title. The API accepts JSON bodies up to 50 MB, so PDFs up to about 37 MB. It validates the body (unknown fields are rejected) and indexes it into `documents` through the `attachments` pipeline. There, OpenSearch's ingest-attachment plugin extracts the text, up to 100,000 characters, into `attachment.content`, and the pipeline drops the base64 so search hits stay light. A document without a file (title, body, tags) is indexed as it is.
+The page posts the chosen PDF as multipart to `POST /search/index`, in a `file` part with the file name as its `title`; from a terminal, `curl -F file=@report.pdf -F title=report.pdf http://localhost:3000/search/index` does the same. The API takes files up to 50 MiB and answers 413 above that. It validates the other fields (unknown ones are rejected), turns the file into the base64 that OpenSearch's attachment processor reads (OpenSearch accepts at most 50 million characters in one JSON string, about 35 MiB of file, so the compose file raises that to 70 million), and indexes the document into `documents` through the `attachments` pipeline. There, OpenSearch's ingest-attachment plugin extracts the text, up to 100,000 characters, into `attachment.content`, and the pipeline drops the base64 so search hits stay light. A document without a file (title, body, tags) can also come as JSON, up to 100 KB, and is indexed as it is. OpenSearch answers 429 when it is too busy to take a document, for instance with two large uploads at once; the API passes that on, so the caller can try again.
 
-`GET /search?q=...` runs a `simple_query_string` over every field, with `from` and `size` (up to 100) for paging; before the first upload it answers an empty list. Paging that is not a number gets a 400, and so does a request OpenSearch refuses, such as paging past the first 10,000 hits or an upload whose file is not base64, with OpenSearch's reason. The page calls it 300 ms after you stop typing. `DELETE /search/index` drops the index.
+`GET /search?q=...` runs a `simple_query_string` over every field, with `from` and `size` (up to 100) for paging; before the first upload it answers an empty list. Paging that is not a number gets a 400, and so does a request OpenSearch refuses, such as paging past the first 10,000 hits, with OpenSearch's reason. The page calls it 300 ms after you stop typing. `DELETE /search/index` drops the index.
 
 ## Security choices
 
