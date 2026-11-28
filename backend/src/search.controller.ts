@@ -14,7 +14,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { IndexDocumentDto } from './dto/index-document.dto';
 import { SearchService } from './search.service';
 
-// A file that reaches this size is cut by multer, and Nest answers 413
+// A file of this size is taken; one byte more and multer cuts it, and Nest answers 413
 const MAX_FILE_BYTES = 50 * 1024 * 1024;
 // Text fields get the same 100 KB as a JSON body, and at most 20 of them
 const FIELD_LIMITS = { fieldSize: 100 * 1024, fields: 20 };
