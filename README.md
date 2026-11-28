@@ -67,9 +67,9 @@ The compose file has no volumes, so `docker compose down` wipes the index and th
 
 ## Tests
 
-`cd backend && npm test` runs the unit tests of `SearchService`, against a fake OpenSearch client, and the HTTP tests of the API built from its real module with the service faked: routes, paging, validation and the answers to OpenSearch errors. The smoke test above covers the rest against a real OpenSearch.
+`cd backend && npm test` runs the unit tests of `SearchService`, against a fake OpenSearch client, and the HTTP tests of the API built from its real module with the service faked: routes, paging, validation and the answers to OpenSearch errors. `cd frontend && npm test` renders the page in jsdom with `fetch` faked: the results with the matched words marked and any other HTML shown as text, the empty and error states, `?q=` in the address and the upload. The smoke test above covers the rest against a real OpenSearch.
 
-GitHub Actions runs both on every pull request and on every push to `develop` and `main` (`.github/workflows/ci.yml`). One job lints, builds and tests the API and lints and builds the page. The other builds the OpenSearch image, starts it with an admin password made for the run and masked in the logs, runs the setup script, starts the API and runs the smoke test.
+GitHub Actions runs them on every pull request and on every push to `develop` and `main` (`.github/workflows/ci.yml`). One job lints, builds and tests the API and the page. The other builds the OpenSearch image, starts it with an admin password made for the run and masked in the logs, runs the setup script, starts the API and runs the smoke test.
 
 ## Layout
 
