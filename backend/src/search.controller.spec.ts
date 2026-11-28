@@ -120,7 +120,19 @@ describe('SearchController', () => {
     expect(service.index).not.toHaveBeenCalled();
   });
 
-  it('answers 413 to a file over 50 MB', async () => {
+  // multer 2 gives busboy one byte more than its fileSize, so the limit itself is taken
+  it('takes a file of exactly 50 MiB', async () => {
+    service.index.mockResolvedValue({ indexed: 'big' });
+
+    await request(app.getHttpServer())
+      .post('/search/index')
+      .attach('file', Buffer.alloc(50 * 1024 * 1024), 'big.pdf')
+      .expect(201);
+    const [, file] = service.index.mock.calls[0] as [object, Buffer];
+    expect(file.length).toBe(50 * 1024 * 1024);
+  });
+
+  it('answers 413 to a file over 50 MiB', async () => {
     await request(app.getHttpServer())
       .post('/search/index')
       .attach('file', Buffer.alloc(50 * 1024 * 1024 + 1), 'big.pdf')

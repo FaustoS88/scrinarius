@@ -58,7 +58,7 @@ jobs:
           docker compose up -d --build
           timeout 120 sh -c 'until curl -sf -o /dev/null http://localhost:3000/search; do sleep 2; done'
       - run: ./scripts/smoke-test.sh
-      - name: Upload the largest PDF the API takes, one byte under 50 MiB
+      - name: Upload the largest PDF the API takes, exactly 50 MiB
         run: ./scripts/large-upload-test.sh
       - name: The page is served
         run: curl -sf http://localhost:5173 | grep -q '<title>scriniarius</title>'
