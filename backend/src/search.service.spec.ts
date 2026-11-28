@@ -74,7 +74,7 @@ describe('SearchService', () => {
 
   it('indexes the file as base64 through the attachments pipeline and makes the document searchable at once', async () => {
     const doc = { id: 'harbour', title: 'harbour.pdf' };
-    client.index.mockResolvedValue({ body: {} });
+    client.index.mockResolvedValue({ body: { _id: 'harbour' } });
 
     await expect(service.index(doc, Buffer.from('%PDF-'))).resolves.toEqual({
       indexed: 'harbour',
@@ -90,7 +90,7 @@ describe('SearchService', () => {
 
   it('indexes a document without a file as it is', async () => {
     const doc = { id: 'note-1', title: 'note', body: 'a lighthouse' };
-    client.index.mockResolvedValue({ body: {} });
+    client.index.mockResolvedValue({ body: { _id: 'note-1' } });
 
     await service.index(doc);
     expect(client.index).toHaveBeenCalledWith(
@@ -98,14 +98,14 @@ describe('SearchService', () => {
     );
   });
 
-  it('gives a document without an id one, and answers with it', async () => {
-    client.index.mockResolvedValue({ body: {} });
+  it('sends a document without an id with none, and answers with the id OpenSearch gives it', async () => {
+    client.index.mockResolvedValue({ body: { _id: 'kX3fQ' } });
 
-    const { indexed } = await service.index({ title: 'note', body: 'text' });
-    expect(indexed).toMatch(/^\d+$/);
-    expect(client.index).toHaveBeenCalledWith(
-      expect.objectContaining({ id: indexed }),
-    );
+    await expect(
+      service.index({ title: 'note', body: 'text' }),
+    ).resolves.toEqual({ indexed: 'kX3fQ' });
+    const [params] = client.index.mock.calls[0] as [{ id?: string }];
+    expect(params.id).toBeUndefined();
   });
 
   it('deletes the documents index', async () => {
