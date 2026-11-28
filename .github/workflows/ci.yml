@@ -46,7 +46,7 @@ jobs:
           printf "OPENSEARCH_INITIAL_ADMIN_PASSWORD='%s'\n" "$pw" > .env
       - name: Start OpenSearch
         run: |
-          docker build -t scrinarius-opensearch:latest .
+          docker build -t scriniarius-opensearch:latest .
           docker compose up -d --wait opensearch
       - name: Create the ingest pipeline and the API key
         run: |
@@ -59,7 +59,7 @@ jobs:
           timeout 120 sh -c 'until curl -sf -o /dev/null http://localhost:3000/search; do sleep 2; done'
       - run: ./scripts/smoke-test.sh
       - name: The page is served
-        run: curl -sf http://localhost:5173 | grep -q '<title>scrinarius</title>'
+        run: curl -sf http://localhost:5173 | grep -q '<title>scriniarius</title>'
       - name: Logs on failure
         if: failure()
         run: docker compose logs --tail 100 || true

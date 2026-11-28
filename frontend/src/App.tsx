@@ -31,7 +31,7 @@ function App() {
   return (
     <main className="page">
       <header>
-        <h1>scrinarius</h1>
+        <h1>scriniarius</h1>
         <p className="tagline">Upload PDFs and search their text.</p>
       </header>
 

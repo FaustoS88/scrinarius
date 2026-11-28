@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "0.0.1",
-  "description": "The scrinarius API: uploads PDFs into OpenSearch and searches their text",
+  "description": "The scriniarius API: uploads PDFs into OpenSearch and searches their text",
   "private": true,
   "license": "MIT",
   "engines": {
