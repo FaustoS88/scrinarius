@@ -1,4 +1,5 @@
 import { useState, type ChangeEvent } from 'react';
+import { API_URL } from '../api';
 
 export function PdfUploader() {
   const [file, setFile] = useState<File | null>(null);
@@ -23,7 +24,7 @@ export function PdfUploader() {
       const form = new FormData();
       form.append('title', file.name);
       form.append('file', file);
-      const resp = await fetch('http://localhost:3000/search/index', {
+      const resp = await fetch(`${API_URL}/search/index`, {
         method: 'POST',
         body: form,
       });
