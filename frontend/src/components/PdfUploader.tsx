@@ -29,7 +29,7 @@ export function PdfUploader() {
       });
 
       if (!resp.ok) {
-        throw new Error(`Upload failed: ${resp.statusText}`);
+        throw new Error(`Upload failed: ${resp.statusText || `HTTP ${resp.status}`}`);
       }
       const body = await resp.json();
       setMessage(`Indexed with ID ${body.indexed}`);
