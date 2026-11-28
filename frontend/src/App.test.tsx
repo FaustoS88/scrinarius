@@ -1,3 +1,4 @@
+import { Profiler } from 'react';
 import { afterEach, expect, it, vi } from 'vitest';
 import { cleanup, configure, fireEvent, render, screen } from '@testing-library/react';
 import App from './App';
@@ -75,6 +76,24 @@ it('says so when nothing matches', async () => {
   search('zebra');
 
   expect(await screen.findByText('No matches.')).toBeTruthy();
+});
+
+it('says Searching… from the first letter until the answer, never No matches. before it', async () => {
+  answer(200, []);
+  // The status as the DOM shows it after each commit, so a state that lasts a single frame is caught too
+  const shown: string[] = [];
+  const record = () => shown.push(document.querySelector('[role=status]')?.textContent ?? '');
+  render(
+    <Profiler id="page" onRender={record}>
+      <App />
+    </Profiler>,
+  );
+  const typed = shown.length;
+  search('z');
+
+  expect(await screen.findByText('No matches.')).toBeTruthy();
+  const after = shown.slice(typed);
+  expect(after.filter((s, i) => s !== after[i - 1])).toEqual(['Searching…', 'No matches.']);
 });
 
 it('shows why a search failed, instead of no matches', async () => {
