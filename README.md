@@ -4,13 +4,13 @@
 
 Upload PDFs and search their text. A NestJS API sends each file through an OpenSearch ingest pipeline that extracts the text, and a React page searches it as you type.
 
-*A scrinarius kept the scrinia, the boxes in which the Romans stored scrolls and documents.*
+*The name shortens scriniarius, the Latin title of a clerk of the scrinia: the boxes, and later the offices, in which the Romans kept scrolls and documents.*
 
 ![The search page: two PDFs found by the word "archive", highlighted in their text](docs/screenshot.png)
 
 ## How it works
 
-The page posts the chosen PDF as multipart to `POST /search/index`, in a `file` part with the file name as its `title`; from a terminal, `curl -F file=@report.pdf -F title=report.pdf http://localhost:3000/search/index` does the same. The API takes files up to 50 MiB and answers 413 above that. It validates the other fields (unknown ones are rejected), turns the file into the base64 that OpenSearch's attachment processor reads (OpenSearch accepts at most 50 million characters in one JSON string, about 35 MiB of file, so the compose file raises that to 70 million), and indexes the document into `documents` through the `attachments` pipeline. There, OpenSearch's ingest-attachment plugin extracts the text, up to 100,000 characters, into `attachment.content`, and the pipeline drops the base64 so search hits stay light. A document without a file (title, body, tags) can also come as JSON, up to 100 KB, and is indexed as it is. OpenSearch answers 429 when it is too busy to take a document, for instance with two large uploads at once; the API passes that on, so the caller can try again.
+The page posts the chosen PDF as multipart to `POST /search/index`, in a `file` part with the file name as its `title`; from a terminal, `curl -F file=@report.pdf -F title=report.pdf http://localhost:3000/search/index` does the same. The API takes files up to 50 MiB and answers 413 above that. It validates the other fields (unknown ones are rejected), turns the file into the base64 that OpenSearch's attachment processor reads (OpenSearch accepts at most 50 million characters in one JSON string, about 36 MiB of file, so the compose file raises that to 70 million), and indexes the document into `documents` through the `attachments` pipeline. There, OpenSearch's ingest-attachment plugin extracts the text, up to 100,000 characters, into `attachment.content`, and the pipeline drops the base64 so search hits stay light. A document without a file (title, body, tags) can also come as JSON, up to 100 KB, and is indexed as it is. OpenSearch answers 429 when it is too busy to take a document, for instance with two large uploads at once; the API passes that on, so the caller can try again.
 
 `GET /search?q=...` runs a `simple_query_string` over every field, with `from` and `size` (up to 100) for paging; before the first upload it answers an empty list. Paging that is not a number gets a 400, and so does a request OpenSearch refuses, such as paging past the first 10,000 hits, with OpenSearch's reason. The page calls it 300 ms after you stop typing. `DELETE /search/index` drops the index.
 
@@ -21,7 +21,7 @@ The page posts the chosen PDF as multipart to `POST /search/index`, in a `file` 
 - OpenSearch errors carry the request with its `Authorization` header, so the API logs only their name, status and message.
 - Secrets live in `.env`, which git ignores and `.dockerignore` keeps out of image builds; compose passes each container only what it needs, the admin password to OpenSearch and the key to the API. `.env.example` has empty values.
 - OpenSearch is pinned to 3.10.1 (API keys need 3.7 or later), and the image turns API keys on before the security index is first created: the build fails if that edit does not land.
-- This setup is for local development: OpenSearch serves a self-signed certificate, and the API's client accepts it.
+- This setup is for local development: OpenSearch serves the demo certificate it ships with, signed by its own demo CA, and the API's client accepts it without checking it.
 
 ## Run it locally
 
