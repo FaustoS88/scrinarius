@@ -29,8 +29,8 @@ services:
         condition: service_healthy
 
   page:
-    build: { context: ., dockerfile: frontend/Dockerfile }
-    # The page calls the API at http://localhost:3000 from the browser
+    build: { context: ., dockerfile: frontend/Dockerfile, args: { VITE_API_URL: "${VITE_API_URL:-}" } }
+    # The page calls the API from the browser at VITE_API_URL, fixed when it is built, or at http://localhost:3000
     ports:
       - "5173:80"
     depends_on:

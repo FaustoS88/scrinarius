@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from './api';
 
 // One OpenSearch hit as the backend returns it
 export interface SearchHit {
@@ -28,7 +29,7 @@ export function useSearch(query: string, delay = 300) {
 
     const controller = new AbortController();
     const timer = setTimeout(() => {
-      fetch(`http://localhost:3000/search?q=${encodeURIComponent(query)}`, {
+      fetch(`${API_URL}/search?q=${encodeURIComponent(query)}`, {
         signal: controller.signal,
       })
         .then(res => {

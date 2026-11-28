@@ -48,6 +48,8 @@ The API checks OpenSearch and its key when it starts and stops there if either f
 
 The OpenSearch image is built with `docker build`, not by compose, because a new image means a new OpenSearch container, and the compose file has no volumes: a new container starts without the index and the key. After `docker compose down`, or after rebuilding that image, bring OpenSearch up and run the setup script again (its note that the previous key was not revoked is expected then) before `docker compose up -d`. Run the script again within 30 days as well, to replace the key; `docker compose up -d` then restarts the API with the new one.
 
+The page calls the API at `http://localhost:3000`. The address is fixed in its JavaScript when the page is built, so to call the API somewhere else, set `VITE_API_URL=https://api.example.com` in `.env`, where compose reads it for every later build too, and rebuild the page with `docker compose up -d --build page`.
+
 ## Develop
 
 To work on the code with reload on save, run only OpenSearch in Docker (the first steps above, or `docker compose stop api page` if everything is up), and start the API and the page with Node 24.15 or later, each in its own terminal:
@@ -61,6 +63,8 @@ cd backend && npm install
 cd frontend && npm install
 npm run start:dev    # the page, served by Vite on http://localhost:5173
 ```
+
+Vite reads `VITE_API_URL` there too: `VITE_API_URL=http://localhost:3001 npm run start:dev` points the page at an API on port 3001.
 
 ## Tests
 
