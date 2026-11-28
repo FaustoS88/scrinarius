@@ -15,18 +15,18 @@ export interface SearchHit {
 export function useSearch(query: string, delay = 300) {
   const [results, setResults] = useState<SearchHit[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  // The query that results and error answer
+  const [searched, setSearched] = useState('');
 
   useEffect(() => {
     if (!query) {
       setResults([]);
       setError(null);
-      setLoading(false);
+      setSearched('');
       return;
     }
 
     const controller = new AbortController();
-    setLoading(true);
     const timer = setTimeout(() => {
       fetch(`http://localhost:3000/search?q=${encodeURIComponent(query)}`, {
         signal: controller.signal,
@@ -45,7 +45,7 @@ export function useSearch(query: string, delay = 300) {
           setError(err instanceof Error ? err.message : String(err));
         })
         .finally(() => {
-          if (!controller.signal.aborted) setLoading(false);
+          if (!controller.signal.aborted) setSearched(query);
         });
     }, delay);
 
@@ -55,5 +55,7 @@ export function useSearch(query: string, delay = 300) {
     };
   }, [query, delay]);
 
+  // Worked out while rendering, not set in the effect, so the render that brings a new query already says loading
+  const loading = query !== '' && query !== searched;
   return { results, error, loading };
 }
