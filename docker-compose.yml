@@ -1,7 +1,7 @@
 services:
   opensearch:
     # Built from the root Dockerfile with docker build, not by compose: a rebuild here would recreate the container and wipe the index and the key
-    image: scrinarius-opensearch:latest
+    image: scriniarius-opensearch:latest
     environment:
       - discovery.type=single-node
       # The API sends a file as base64 in one JSON string: 50 MiB is about 70 million characters, past OpenSearch's default of 50 million
