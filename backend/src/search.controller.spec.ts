@@ -92,6 +92,25 @@ describe('SearchController', () => {
     expect(file.toString()).toBe('%PDF-1.4 harbour');
   });
 
+  it.each([
+    ['one tag', ['sea']],
+    ['two tags', ['sea', 'harbour']],
+  ])(
+    'passes %s sent as multipart to the service as a list',
+    async (_case, tags) => {
+      service.index.mockResolvedValue({ indexed: 'harbour' });
+
+      // superagent sends one `tags` part for each item of the list
+      await request(app.getHttpServer())
+        .post('/search/index')
+        .field('title', 'harbour.pdf')
+        .field('tags', tags)
+        .expect(201, { indexed: 'harbour' });
+      const [doc] = service.index.mock.calls[0] as [{ tags: unknown }];
+      expect(doc.tags).toEqual(tags);
+    },
+  );
+
   it('answers 400 to a text field over 100 KB', async () => {
     await request(app.getHttpServer())
       .post('/search/index')
