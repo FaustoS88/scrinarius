@@ -39,13 +39,16 @@ export class SearchService {
     return response.body.hits.hits;
   }
 
-  // The attachments pipeline extracts the text of a base64 file in `data`; refresh makes the document searchable at once
-  async index(doc: IndexDocumentDto): Promise<{ indexed: string }> {
+  // The attachments pipeline extracts the text of the file, which it reads as base64 from `data`; refresh makes the document searchable at once
+  async index(
+    doc: IndexDocumentDto,
+    file?: Buffer,
+  ): Promise<{ indexed: string }> {
     const id = doc.id ?? Date.now().toString();
     await this.client.index({
       index: INDEX,
       id,
-      body: doc,
+      body: file ? { ...doc, data: file.toString('base64') } : doc,
       pipeline: 'attachments',
       refresh: 'true',
     });

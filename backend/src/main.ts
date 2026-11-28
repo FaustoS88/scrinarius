@@ -4,7 +4,6 @@ import { AppModule } from './app.module';
 import { describeOpenSearchError } from './opensearch.client';
 import { Logger } from '@nestjs/common';
 import { Client } from '@opensearch-project/opensearch';
-import { json, urlencoded } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -20,10 +19,6 @@ async function bootstrap() {
 
   // The React page runs on another origin
   app.enableCors();
-
-  // PDFs arrive as base64 inside JSON, so raise the default limit of about 100 KB
-  app.use(json({ limit: '50mb' }));
-  app.use(urlencoded({ limit: '50mb', extended: true }));
 
   await app.listen(process.env.PORT ?? 3000);
 }

@@ -21,9 +21,5 @@ export class IndexDocumentDto {
 
   @IsOptional()
   @IsString()
-  data?: string; // base64-encoded PDF
-
-  @IsOptional()
-  @IsString()
   published?: string;
 }

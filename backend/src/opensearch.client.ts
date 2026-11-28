@@ -40,7 +40,7 @@ export class OpenSearchErrorFilter implements ExceptionFilter {
 
   catch(error: errors.OpenSearchClientError, host: ArgumentsHost) {
     this.logger.error(describeOpenSearchError(error));
-    // A 400 from OpenSearch means the caller's input was invalid, such as an offset past 10,000 hits or a file that is not base64
+    // A 400 from OpenSearch means the caller's input was invalid, such as an offset past 10,000 hits or a repeated q
     const rejected =
       error instanceof errors.ResponseError && error.statusCode === 400;
     host
