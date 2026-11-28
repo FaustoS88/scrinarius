@@ -40,19 +40,19 @@ export class SearchService {
   }
 
   // The attachments pipeline extracts the text of the file, which it reads as base64 from `data`; refresh makes the document searchable at once
+  // Without an id OpenSearch makes a unique one, which the answer carries
   async index(
     doc: IndexDocumentDto,
     file?: Buffer,
   ): Promise<{ indexed: string }> {
-    const id = doc.id ?? Date.now().toString();
-    await this.client.index({
+    const response = await this.client.index({
       index: INDEX,
-      id,
+      id: doc.id,
       body: file ? { ...doc, data: file.toString('base64') } : doc,
       pipeline: 'attachments',
       refresh: 'true',
     });
-    return { indexed: id };
+    return { indexed: response.body._id };
   }
 
   async deleteIndex(): Promise<any> {
