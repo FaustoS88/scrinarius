@@ -6,7 +6,7 @@ Upload PDFs and search their text. A NestJS API sends each file through an OpenS
 
 *A scriniarius was a clerk of the scrinia: the boxes, and later the offices, in which the Romans kept scrolls and documents.*
 
-![The search page: two PDFs found by the word "archive", highlighted in their text](docs/screenshot.png)
+![The search page as a word is typed: "archive" finds two PDFs and "invoice" finds one, with the word highlighted in their text](docs/search.gif)
 
 ## How it works
 
