@@ -105,6 +105,15 @@ it('shows why a search failed, instead of no matches', async () => {
   expect(screen.queryByText('No matches.')).toBeNull();
 });
 
+it('shows the HTTP status when a failed search has no status text, as over HTTP/2', async () => {
+  answer(500, { statusCode: 500, message: 'Internal server error' });
+  render(<App />);
+  search('aardvark');
+
+  expect((await screen.findByRole('alert')).textContent).toBe('HTTP 500');
+  expect(screen.queryByText('No matches.')).toBeNull();
+});
+
 it('opens on the search in the ?q= of the address', async () => {
   window.history.replaceState(null, '', '/?q=aardvark');
   const fetch = answer(200, [pdf]);

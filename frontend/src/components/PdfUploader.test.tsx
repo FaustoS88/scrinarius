@@ -44,6 +44,13 @@ it('shows why an upload failed', async () => {
   expect(await screen.findByText('Error: Upload failed: Payload Too Large')).toBeTruthy();
 });
 
+it('shows the HTTP status when a failed upload has no status text, as over HTTP/2', async () => {
+  answer(413, { statusCode: 413, message: 'request entity too large' });
+  upload(pdf);
+
+  expect(await screen.findByText('Error: Upload failed: HTTP 413')).toBeTruthy();
+});
+
 it('keeps the button off until a file is chosen', () => {
   render(<PdfUploader />);
 

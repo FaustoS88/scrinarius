@@ -32,7 +32,8 @@ export function useSearch(query: string, delay = 300) {
         signal: controller.signal,
       })
         .then(res => {
-          if (!res.ok) throw new Error(res.statusText);
+          // HTTP/2 and some proxies send no status text
+          if (!res.ok) throw new Error(res.statusText || `HTTP ${res.status}`);
           return res.json() as Promise<SearchHit[]>;
         })
         .then(data => {
